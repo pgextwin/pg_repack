@@ -156,54 +156,61 @@ if (-not (Test-Path $libpq)) {
 $pgport = Join-Path $PgRoot "lib\libpgport.lib"
 $pgcommon = Join-Path $PgRoot "lib\libpgcommon.lib"
 
-# The normal EDB Community installer intentionally does not ship the internal
-# static frontend support libraries. Build exactly those libraries from the
-# matching official PostgreSQL source release when they are absent. The test
-# PostgreSQL installation itself remains the unmodified EDB installation.
+# Resolve the exact installed PostgreSQL minor for license provenance and,
+# when needed, for rebuilding internal frontend support archives.
+$pgConfig = Join-Path $PgRoot "bin\pg_config.exe"
+if (-not (Test-Path $pgConfig)) {
+    throw "pg_config.exe was not found: $pgConfig"
+}
+
+$pgVersionText = (& $pgConfig --version).Trim()
+if ($LASTEXITCODE -ne 0 -or $pgVersionText -notmatch '^PostgreSQL\s+(\d+)\.(\d+)') {
+    throw "Could not parse PostgreSQL version from pg_config.exe: '$pgVersionText'"
+}
+
+$pgMajor = [int]$Matches[1]
+$pgMinor = [int]$Matches[2]
+$pgSourceTag = "REL_{0}_{1}" -f $pgMajor, $pgMinor
+$pgSourceDir = Join-Path $tempRoot ("postgresql-{0}.{1}-source" -f $pgMajor, $pgMinor)
+$pgSupportBuildDir = Join-Path $tempRoot ("postgresql-{0}.{1}-frontend-support" -f $pgMajor, $pgMinor)
+
+foreach ($dir in @($pgSourceDir, $pgSupportBuildDir)) {
+    if (Test-Path $dir) {
+        Remove-Item $dir -Recurse -Force
+    }
+}
+
+Write-Host "Resolving official PostgreSQL source $pgMajor.$pgMinor ($pgSourceTag)."
+& git clone --quiet --depth 1 --branch $pgSourceTag https://github.com/postgres/postgres.git $pgSourceDir
+if ($LASTEXITCODE -ne 0) {
+    throw "Failed to clone official PostgreSQL source tag $pgSourceTag."
+}
+
+$pgSourceSha = (& git -C $pgSourceDir rev-parse HEAD).Trim()
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($pgSourceSha)) {
+    throw "Failed to resolve PostgreSQL source commit for $pgSourceTag."
+}
+Write-Host "PostgreSQL source provenance: postgres/postgres $pgSourceTag @ $pgSourceSha"
+
+# pg_repack.exe statically links PostgreSQL frontend support code either from
+# the EDB installation or from the matching official source build. Preserve
+# the PostgreSQL license notice in every package in both cases.
+$postgresCopyright = Join-Path $pgSourceDir "COPYRIGHT"
+if (-not (Test-Path $postgresCopyright)) {
+    throw "PostgreSQL COPYRIGHT was not found in the official source checkout."
+}
+Copy-Item $postgresCopyright (Join-Path $UpstreamDir "POSTGRESQL-COPYRIGHT") -Force
+
+# Modern EDB Windows installers do not ship the internal libpgport/libpgcommon
+# archives. PostgreSQL 16+ has the official Meson Windows build path, so build
+# only those two frontend support archives when needed. PostgreSQL 14/15 are
+# first tested against the libraries supplied by their EDB installations.
 if (-not (Test-Path $pgport) -or -not (Test-Path $pgcommon)) {
-    $pgConfig = Join-Path $PgRoot "bin\pg_config.exe"
-    if (-not (Test-Path $pgConfig)) {
-        throw "pg_config.exe was not found: $pgConfig"
+    if ($pgMajor -lt 16) {
+        throw "EDB PostgreSQL $pgMajor does not provide libpgport/libpgcommon; a legacy MSVC frontend-support fallback is required."
     }
 
-    $pgVersionText = (& $pgConfig --version).Trim()
-    if ($LASTEXITCODE -ne 0 -or $pgVersionText -notmatch '^PostgreSQL\s+(\d+)\.(\d+)') {
-        throw "Could not parse PostgreSQL version from pg_config.exe: '$pgVersionText'"
-    }
-
-    $pgMajor = [int]$Matches[1]
-    $pgMinor = [int]$Matches[2]
-    if ($pgMajor -lt 17) {
-        throw "The Stage 1 frontend-support source builder currently targets PostgreSQL 17 and later; got $pgVersionText."
-    }
-
-    $pgSourceTag = "REL_{0}_{1}" -f $pgMajor, $pgMinor
-    $pgSourceDir = Join-Path $tempRoot ("postgresql-{0}.{1}-source" -f $pgMajor, $pgMinor)
-    $pgSupportBuildDir = Join-Path $tempRoot ("postgresql-{0}.{1}-frontend-support" -f $pgMajor, $pgMinor)
-
-    foreach ($dir in @($pgSourceDir, $pgSupportBuildDir)) {
-        if (Test-Path $dir) {
-            Remove-Item $dir -Recurse -Force
-        }
-    }
-
-    Write-Host "EDB install does not contain libpgport/libpgcommon; building frontend support from PostgreSQL $pgMajor.$pgMinor ($pgSourceTag)."
-    & git clone --depth 1 --branch $pgSourceTag https://github.com/postgres/postgres.git $pgSourceDir
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to clone official PostgreSQL source tag $pgSourceTag."
-    }
-
-    $pgSourceSha = (& git -C $pgSourceDir rev-parse HEAD).Trim()
-    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($pgSourceSha)) {
-        throw "Failed to resolve PostgreSQL source commit for $pgSourceTag."
-    }
-    Write-Host "PostgreSQL frontend-support source: postgres/postgres $pgSourceTag @ $pgSourceSha"
-
-    $postgresCopyright = Join-Path $pgSourceDir "COPYRIGHT"
-    if (-not (Test-Path $postgresCopyright)) {
-        throw "PostgreSQL COPYRIGHT was not found in the official source checkout."
-    }
-    Copy-Item $postgresCopyright (Join-Path $UpstreamDir "POSTGRESQL-COPYRIGHT") -Force
+    Write-Host "EDB install does not contain libpgport/libpgcommon; building frontend support from PostgreSQL $pgMajor.$pgMinor."
 
     $python = (Get-Command python.exe -ErrorAction Stop).Source
     & $python -m pip install --disable-pip-version-check --quiet "meson==1.8.3" "ninja==1.11.1.4"
@@ -235,10 +242,8 @@ if errorlevel 1 exit /b %errorlevel%
         throw "PostgreSQL frontend support library build failed with exit code $LASTEXITCODE."
     }
 
-    # PostgreSQL's Meson files deliberately name these static targets
-    # libpgport.a/libpgcommon.a even when the selected toolchain is MSVC.
-    # Accept either Meson's .a names or conventional .lib names; both are
-    # COFF static archives when produced by the MSVC toolchain.
+    # PostgreSQL's Meson targets may use .a names even with the MSVC toolchain.
+    # Both .a and .lib outputs here are COFF static archives.
     $pgportItem = Get-ChildItem -Path $pgSupportBuildDir -Recurse -File |
         Where-Object { $_.Name -in @("libpgport.a", "libpgport.lib") } |
         Select-Object -First 1
@@ -254,7 +259,7 @@ if errorlevel 1 exit /b %errorlevel%
     Write-Host "Built PostgreSQL frontend support archives: $pgport ; $pgcommon"
 }
 else {
-    Write-Host "Using PostgreSQL frontend support libraries supplied by the installation."
+    Write-Host "Using PostgreSQL frontend support libraries supplied by the installation: $pgport ; $pgcommon"
 }
 
 $optionalClientLibs = @(
