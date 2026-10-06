@@ -16,7 +16,7 @@ upstream は `reorg/pg_repack` の `ver_1.5.3` に固定し、通常のWindows�
 | 17 | 17.11 | Windows x64 |
 | 18 | 18.6 | Windows x64 |
 
-初回pgextwin Release tagは次を予定しています。
+公開中のpgextwin Release tagは次のとおりです。
 
 ~~~text
 v1.5.3-windows.1
