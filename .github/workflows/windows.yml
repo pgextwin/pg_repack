@@ -1,0 +1,22 @@
+name: Windows CI/CD
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "release/**"
+  workflow_dispatch:
+
+concurrency:
+  group: windows-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    uses: pgextwin/build/.github/workflows/build-extension.yml@main
+    with:
+      extension_config_path: config/extension.json
