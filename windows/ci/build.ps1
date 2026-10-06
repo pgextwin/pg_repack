@@ -32,6 +32,59 @@ if ($version -ne "1.5.3") {
     throw "Unexpected pg_repack version: $version"
 }
 
+# pg_repack 1.5.3 predates PostgreSQL 18's extended module-magic support.
+# Apply the exact source-level compatibility change introduced upstream by
+# reorg/pg_repack commit 82120316e840773e4521314917a97c26b4b5f520.
+$repackSource = Join-Path $UpstreamDir "lib\repack.c"
+$repackText = Get-Content $repackSource -Raw
+
+$versionMacroBlock = @'
+#ifdef REPACK_VERSION
+/* macro trick to stringify a macro expansion */
+#define xstr(s) str(s)
+#define str(s) #s
+#define LIBRARY_VERSION xstr(REPACK_VERSION)
+#else
+#define LIBRARY_VERSION "unknown"
+#endif
+'@
+
+if (-not $repackText.Contains($versionMacroBlock)) {
+    throw "Expected pg_repack 1.5.3 version macro block was not found."
+}
+$repackText = $repackText.Replace($versionMacroBlock, "")
+
+$magicBlock = @'
+#ifdef REPACK_VERSION
+/* macro trick to stringify a macro expansion */
+#define xstr(s) str(s)
+#define str(s) #s
+#define LIBRARY_VERSION xstr(REPACK_VERSION)
+#else
+#define LIBRARY_VERSION "unknown"
+#endif
+
+#if PG_VERSION_NUM >= 180000
+PG_MODULE_MAGIC_EXT(
+    .name = "pg_repack",
+    .version = LIBRARY_VERSION
+);
+#else
+PG_MODULE_MAGIC;
+#endif
+'@
+
+$magicMarker = "PG_MODULE_MAGIC;"
+$magicIndex = $repackText.IndexOf($magicMarker, [StringComparison]::Ordinal)
+if ($magicIndex -lt 0) {
+    throw "Expected pg_repack 1.5.3 PG_MODULE_MAGIC marker was not found."
+}
+if ($repackText.IndexOf($magicMarker, $magicIndex + $magicMarker.Length, [StringComparison]::Ordinal) -ge 0) {
+    throw "More than one PG_MODULE_MAGIC marker was found; refusing an ambiguous patch."
+}
+$repackText = $repackText.Substring(0, $magicIndex) + $magicBlock + $repackText.Substring($magicIndex + $magicMarker.Length)
+[IO.File]::WriteAllText($repackSource, $repackText, [Text.UTF8Encoding]::new($false))
+
 $libDir = Join-Path $UpstreamDir "lib"
 $binDir = Join-Path $UpstreamDir "bin"
 
@@ -75,12 +128,23 @@ $includeArgs = @(
 $tempRoot = if ($env:RUNNER_TEMP) { $env:RUNNER_TEMP } else { [IO.Path]::GetTempPath() }
 $cmdFile = Join-Path $tempRoot "pg_repack-build.cmd"
 
-$clientLibs = @(
+$requiredClientLibs = @(
     (Join-Path $PgRoot "lib\libpq.lib"),
     (Join-Path $PgRoot "lib\libpgport.lib"),
-    (Join-Path $PgRoot "lib\libpgcommon.lib"),
+    (Join-Path $PgRoot "lib\libpgcommon.lib")
+)
+foreach ($clientLib in $requiredClientLibs) {
+    if (-not (Test-Path $clientLib)) {
+        throw "Required PostgreSQL frontend link library was not found: $clientLib"
+    }
+}
+
+$optionalClientLibs = @(
     (Join-Path $PgRoot "lib\libintl.lib")
 ) | Where-Object { Test-Path $_ }
+
+$clientLibs = @($requiredClientLibs) + @($optionalClientLibs)
+Write-Host ("PostgreSQL frontend link libraries: " + ($clientLibs -join ", "))
 
 $clientLibArgs = (($clientLibs | ForEach-Object { '"{0}"' -f $_ }) + @("advapi32.lib", "ws2_32.lib")) -join " "
 
@@ -105,7 +169,7 @@ link /nologo /DLL /OUT:"$libDir\pg_repack.dll" /DEF:"$defPath" ^
   "$PgRoot\lib\postgres.lib"
 if errorlevel 1 exit /b %errorlevel%
 
-cl /nologo /O2 /MD /DWIN32 /DWIN32_NO_STATUS /D_CRT_SECURE_NO_WARNINGS /DREPACK_VERSION=$version ^
+cl /nologo /O2 /MD /DWIN32 /DWIN32_NO_STATUS /D_CRT_SECURE_NO_WARNINGS /DFRONTEND /DREPACK_VERSION=$version ^
   $includeArgs /I"$binDir" /I"$binDir\pgut" ^
   /c "$binDir\pg_repack.c" /Fo"$binDir\pg_repack.obj"
 if errorlevel 1 exit /b %errorlevel%
