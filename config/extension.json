@@ -7,13 +7,21 @@
     "version": "1.5.3"
   },
   "postgresql": {
-    "majors": [17, 18]
+    "majors": [
+      17,
+      18
+    ]
   },
   "windows": {
     "architecture": "x64"
   },
   "license": {
     "verifyAgainstUpstream": true,
-    "upstreamPath": "COPYRIGHT"
+    "files": [
+      {
+        "repositoryPath": "COPYRIGHT",
+        "upstreamPath": "COPYRIGHT"
+      }
+    ]
   }
 }
