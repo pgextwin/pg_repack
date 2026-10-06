@@ -27,7 +27,7 @@ PostgreSQL lifecycle metadata is maintained centrally in **pgextwin/build**. Pos
 
 ## Download
 
-The first pgextwin package-set release is planned as:
+The current pgextwin package-set release is:
 
 ~~~text
 v1.5.3-windows.1
