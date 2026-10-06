@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "name": "pg_repack",
+  "upstream": {
+    "repository": "reorg/pg_repack",
+    "ref": "ver_1.5.3",
+    "version": "1.5.3"
+  },
+  "postgresql": {
+    "majors": [18]
+  },
+  "windows": {
+    "architecture": "x64"
+  },
+  "license": {
+    "verifyAgainstUpstream": true,
+    "files": [
+      {
+        "repositoryPath": "COPYRIGHT",
+        "upstreamPath": "COPYRIGHT"
+      }
+    ]
+  }
+}
