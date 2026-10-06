@@ -235,14 +235,23 @@ if errorlevel 1 exit /b %errorlevel%
         throw "PostgreSQL frontend support library build failed with exit code $LASTEXITCODE."
     }
 
-    $pgportItem = Get-ChildItem -Path $pgSupportBuildDir -Recurse -File -Filter "libpgport.lib" | Select-Object -First 1
-    $pgcommonItem = Get-ChildItem -Path $pgSupportBuildDir -Recurse -File -Filter "libpgcommon.lib" | Select-Object -First 1
+    # PostgreSQL's Meson files deliberately name these static targets
+    # libpgport.a/libpgcommon.a even when the selected toolchain is MSVC.
+    # Accept either Meson's .a names or conventional .lib names; both are
+    # COFF static archives when produced by the MSVC toolchain.
+    $pgportItem = Get-ChildItem -Path $pgSupportBuildDir -Recurse -File |
+        Where-Object { $_.Name -in @("libpgport.a", "libpgport.lib") } |
+        Select-Object -First 1
+    $pgcommonItem = Get-ChildItem -Path $pgSupportBuildDir -Recurse -File |
+        Where-Object { $_.Name -in @("libpgcommon.a", "libpgcommon.lib") } |
+        Select-Object -First 1
     if ($null -eq $pgportItem -or $null -eq $pgcommonItem) {
-        throw "Meson completed but libpgport.lib/libpgcommon.lib were not found in the PostgreSQL build tree."
+        throw "Meson completed but libpgport/libpgcommon static archives were not found in the PostgreSQL build tree."
     }
 
     $pgport = $pgportItem.FullName
     $pgcommon = $pgcommonItem.FullName
+    Write-Host "Built PostgreSQL frontend support archives: $pgport ; $pgcommon"
 }
 else {
     Write-Host "Using PostgreSQL frontend support libraries supplied by the installation."
