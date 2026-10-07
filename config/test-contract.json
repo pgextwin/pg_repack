@@ -1,0 +1,41 @@
+{
+  "contractVersion": 2,
+  "extension": "pg_repack",
+  "smokeTest": {
+    "script": "windows/ci/smoke-test.ps1"
+  },
+  "runtimeRequirements": {
+    "extensionCreation": "required",
+    "preload": "none",
+    "backgroundWorker": false,
+    "clientExecutable": {
+      "required": true,
+      "packagePaths": [
+        "bin/pg_repack.exe"
+      ]
+    }
+  },
+  "testSetup": {
+    "preload": "none",
+    "backgroundWorker": false,
+    "settings": []
+  },
+  "coverage": {
+    "createExtension": "covered",
+    "backgroundWorker": "not-applicable",
+    "clientExecutable": "covered",
+    "serverLogAssertions": "not-applicable",
+    "upgrade": "not-covered"
+  },
+  "functionalScenarios": [
+    {
+      "id": "table-repack-preserves-rows",
+      "description": "Runs pg_repack.exe against a real table and verifies row-count preservation and a changed relation filenode after the physical rewrite.",
+      "evidence": [
+        "client-executable",
+        "sql-result",
+        "physical-storage"
+      ]
+    }
+  ]
+}
