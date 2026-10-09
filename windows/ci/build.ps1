@@ -220,10 +220,27 @@ if (-not (Test-Path $pgport) -or -not (Test-Path $pgcommon)) {
 
     if (-not (Get-Command win_bison.exe -ErrorAction SilentlyContinue) -or
         -not (Get-Command win_flex.exe -ErrorAction SilentlyContinue)) {
-        & choco install winflexbison3 --version=2.5.24.20210105 --yes --no-progress
-        if ($LASTEXITCODE -ne 0) {
-            throw "Failed to install pinned WinFlexBison build tooling."
+        # Chocolatey package availability can vary by runner/source. Fetch the exact
+        # upstream archive used by the approved winflexbison3 2.5.24.20210105
+        # package and verify its immutable SHA256 BEFORE extracting/executing.
+        $winFlexVersion = "2.5.24"
+        $winFlexArchive = Join-Path $tempRoot "win_flex_bison-$winFlexVersion.zip"
+        $winFlexRoot = Join-Path $tempRoot "winflexbison-$winFlexVersion"
+        $winFlexUrl = "https://github.com/lexxmark/winflexbison/releases/download/v$winFlexVersion/win_flex_bison-$winFlexVersion.zip"
+        $winFlexSha256 = "39C6086CE211D5415500ACC5ED2D8939861CA1696AEE48909C7F6DAF5122B505"
+        Invoke-WebRequest -Uri $winFlexUrl -OutFile $winFlexArchive -ErrorAction Stop
+        $actualWinFlexSha = (Get-FileHash -Path $winFlexArchive -Algorithm SHA256).Hash
+        if ($actualWinFlexSha -ne $winFlexSha256) {
+            throw "WinFlexBison upstream ZIP SHA-256 mismatch: $actualWinFlexSha"
         }
+        Expand-Archive -Path $winFlexArchive -DestinationPath $winFlexRoot -Force
+        $winBison = Get-ChildItem $winFlexRoot -Recurse -Filter win_bison.exe -File | Select-Object -First 1
+        $winFlex = Get-ChildItem $winFlexRoot -Recurse -Filter win_flex.exe -File | Select-Object -First 1
+        if ($null -eq $winBison -or $null -eq $winFlex -or $winBison.DirectoryName -ne $winFlex.DirectoryName) {
+            throw "Pinned WinFlexBison executables were not found together after verified extraction."
+        }
+        $env:PATH = "$($winBison.DirectoryName);$env:PATH"
+        Write-Host "Using checksum-verified WinFlexBison $winFlexVersion from its original release archive."
     }
 
     $supportCmd = Join-Path $tempRoot "postgresql-frontend-support-build.cmd"
