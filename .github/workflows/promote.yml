@@ -1,0 +1,142 @@
+name: Promote verified upstream candidate to attested Release (manual only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_pr:
+        description: Merged automation-owned immutable manifest-only candidate PR number
+        required: true
+        type: string
+      candidate_run_id:
+        description: Successful exact-head Windows candidate dispatch run ID
+        required: true
+        type: string
+      decision_run_id:
+        description: Completed upstream watch run holding candidate-decision artifact
+        required: true
+        type: string
+      release_tag:
+        description: New and NEVER-used Windows Release tag
+        required: true
+        type: string
+      confirm_release:
+        description: Type PUBLISH to explicitly authorize this formal Release
+        required: true
+        type: string
+
+concurrency:
+  group: pg_repack-human-release-promotion
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  authorize:
+    name: Verify central and local manual operator policy, SHA-pinned candidate and exact PG matrix
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: pgextwin/build
+          ref: 455f0ccc667697f600700a6e64bcfd6c57b6a977
+          path: .pgextwin-build
+          persist-credentials: false
+      - name: Require explicit operator PUBLISH and independently VERIFIED candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_PR: ${{ inputs.candidate_pr }}
+          CANDIDATE_RUN: ${{ inputs.candidate_run_id }}
+          DECISION_RUN: ${{ inputs.decision_run_id }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          CONFIRM_RELEASE: ${{ inputs.confirm_release }}
+        run: |
+          python .pgextwin-build/scripts/fleet-promotion-gate.py \
+            --candidate-pr "$CANDIDATE_PR" \
+            --candidate-run-id "$CANDIDATE_RUN" \
+            --decision-run-id "$DECISION_RUN" \
+            --release-tag "$RELEASE_TAG" \
+            --confirm-release "$CONFIRM_RELEASE" \
+            --extension config/extension.json \
+            --local-policy config/release-promotion.json \
+            --lifecycle .pgextwin-build/metadata/postgresql.json \
+            --output "$RUNNER_TEMP/promotion-receipt.json"
+      - name: Preserve immutable authorization receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: promotion-receipt
+          path: ${{ runner.temp }}/promotion-receipt.json
+          if-no-files-found: error
+
+  release_build:
+    name: Rebuild signed Windows x64 binary and SBOM from verified current main
+    needs: authorize
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    uses: pgextwin/build/.github/workflows/build-extension-attested.yml@5756b3c5136a8bf4db710016cfe97555f0a71c6d
+    with:
+      extension_config_path: config/extension.json
+      test_contract_path: config/test-contract.json
+
+  publish:
+    name: Check signatures, exact SHA256 and create-only Release ID
+    needs: [authorize, release_build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+      attestations: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: pgextwin/build
+          ref: 455f0ccc667697f600700a6e64bcfd6c57b6a977
+          path: .pgextwin-build
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: promotion-receipt
+          path: ${{ runner.temp }}/authorization
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: pg_repack-pg*-windows-x64
+          path: dist
+          merge-multiple: true
+      - name: Verify signed binaries and publish only the fresh exact Release ID
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          python .pgextwin-build/scripts/fleet-publish-release.py \
+            --manifest config/extension.json \
+            --lifecycle .pgextwin-build/metadata/postgresql.json \
+            --receipt "$RUNNER_TEMP/authorization/promotion-receipt.json" \
+            --tag "$RELEASE_TAG" \
+            --dist dist \
+            --recovery "$RUNNER_TEMP/promotion-recovery.json"
+      - name: Preserve partial-Draft recovery record, never auto-retry an occupied tag
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: promotion-recovery
+          path: ${{ runner.temp }}/promotion-recovery.json
+          if-no-files-found: warn
+      - name: Record manual post-Release Catalog handoff requirement
+        if: success()
+        run: |
+          echo "Formal Release published and verified. Catalog ingestion requires an independently verified public-Release update; do not report Catalog complete from this step." >> "$GITHUB_STEP_SUMMARY"
