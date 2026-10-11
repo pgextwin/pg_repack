@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - "release/**"
   workflow_dispatch:
 
 concurrency:
@@ -15,37 +14,15 @@ concurrency:
 permissions:
   contents: read
 
+# No release/* publisher; a verified main-only manual PUBLISH gate is required.
 jobs:
   windows:
-    if: ${{ !startsWith(github.ref, 'refs/heads/release/') }}
     permissions:
       contents: read
     uses: pgextwin/build/.github/workflows/build-extension.yml@21c99b933da98f397f739971e738ecb685fe55d2
     with:
       extension_config_path: config/extension.json
       test_contract_path: config/test-contract.json
-
-  release_build:
-    if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-    permissions:
-      contents: read
-      id-token: write
-      attestations: write
-      artifact-metadata: write
-    uses: pgextwin/build/.github/workflows/build-extension-attested.yml@8246f4d3415a48b1ad4af13f421277057886b58f
-    with:
-      extension_config_path: config/extension.json
-      test_contract_path: config/test-contract.json
-
-  release:
-    if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-    needs: release_build
-    permissions:
-      contents: write
-    uses: pgextwin/build/.github/workflows/release-extension.yml@8246f4d3415a48b1ad4af13f421277057886b58f
-    with:
-      extension_name: ${{ needs.release_build.outputs.extension_name }}
-      upstream_repository: ${{ needs.release_build.outputs.upstream_repository }}
 
   candidate_report:
     name: Verify candidate matrix and evidence
