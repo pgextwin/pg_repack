@@ -19,7 +19,7 @@ jobs:
   windows:
     permissions:
       contents: read
-    uses: pgextwin/build/.github/workflows/build-extension.yml@21c99b933da98f397f739971e738ecb685fe55d2
+    uses: pgextwin/build/.github/workflows/build-extension.yml@455f0ccc667697f600700a6e64bcfd6c57b6a977
     with:
       extension_config_path: config/extension.json
       test_contract_path: config/test-contract.json
@@ -32,6 +32,6 @@ jobs:
       contents: read
       actions: read
       issues: write
-    uses: pgextwin/build/.github/workflows/verify-candidate.yml@16b886b9d06d6f389b369b87ce0c155767697ca0
+    uses: pgextwin/build/.github/workflows/verify-candidate.yml@ecf84241c1c4cd99fab3f964cb309f9c6e2a01f8
     with:
       matrix_result: ${{ needs.windows.result }}
