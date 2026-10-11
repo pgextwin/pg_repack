@@ -4,7 +4,8 @@
   "upstream": {
     "repository": "reorg/pg_repack",
     "ref": "ver_1.5.3",
-    "version": "1.5.3"
+    "version": "1.5.3",
+    "commit": "6902ab313aeb49227867087dca99cf107f7be23b"
   },
   "postgresql": {
     "majors": [
