@@ -19,7 +19,7 @@ upstream は `reorg/pg_repack` の `ver_1.5.3` に固定し、通常のWindows�
 公開中のpgextwin Release tagは次のとおりです。
 
 ~~~text
-v1.5.3-windows.1
+v1.5.3-windows.2
 ~~~
 
 ## ZIPの内容
