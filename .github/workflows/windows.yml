@@ -24,6 +24,25 @@ jobs:
       extension_config_path: config/extension.json
       test_contract_path: config/test-contract.json
 
+  # Stable branch-protection context independent of PG14/PG19 matrix churn.
+  # This result requires the ENTIRE maintained-major reusable Windows build.
+  # No Release/dispatch/publish operations occur in this job.
+  windows_required:
+    name: Windows required summary
+    if: ${{ always() && !startsWith(github.ref, 'refs/heads/release/') }}
+    needs: windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Test required Windows aggregate allow/deny contract
+        run: python3 tests/test_required_windows_summary.py
+      - name: Require full maintained-PG Windows matrix success
+        env:
+          WINDOWS_MATRIX_RESULT: ${{ needs.windows.result }}
+        run: python3 scripts/required_windows_summary.py
+
   candidate_report:
     name: Verify candidate matrix and evidence
     if: ${{ always() && github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/auto-candidate/') }}
