@@ -29,115 +29,15 @@ concurrency:
 
 jobs:
   authorize:
-    name: Fail-closed dispatch and operator preflight
-    runs-on: ubuntu-latest
+    name: Shared strict operator preflight and GET-only update watch
     permissions:
       contents: read
-    outputs:
-      mode: ${{ steps.gate.outputs.mode }}
-    steps:
-      - name: Authorize read-only or human candidate request
-        id: gate
-        shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          REPO: ${{ github.repository }}
-          REF_NAME: ${{ github.ref }}
-          HEAD_SHA: ${{ github.sha }}
-          RUN_ATTEMPT: ${{ github.run_attempt }}
-          ACTOR: ${{ github.actor }}
-          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
-          DRY_RUN: ${{ inputs.dry_run }}
-          CONFIRM_UPDATE: ${{ inputs.confirm_update }}
-          EXPECTED_MAIN_SHA: ${{ inputs.expected_main_sha }}
-        run: |
-          set -euo pipefail
-          if [[ "$EVENT_NAME" != "workflow_dispatch" || "$REPO" != "pgextwin/pg_repack" || "$REF_NAME" != "refs/heads/main" || "$RUN_ATTEMPT" != "1" ]]; then
-            echo 'DENY: only first-attempt manual dispatch on main' >&2
-            exit 1
-          fi
-          if [[ "$DRY_RUN" == "true" ]]; then
-            if [[ -n "$CONFIRM_UPDATE" || -n "$EXPECTED_MAIN_SHA" ]]; then
-              echo 'DENY: dry-run request must not carry a candidate authorization' >&2
-              exit 1
-            fi
-            echo 'mode=read-only' >> "$GITHUB_OUTPUT"
-            echo 'READ_ONLY: upstream detection; no candidate or candidate-decision artifact' >> "$GITHUB_STEP_SUMMARY"
-          elif [[ "$DRY_RUN" == "false" ]]; then
-            if [[ "$ACTOR" != "ShutenOishi" || "$TRIGGERING_ACTOR" != "ShutenOishi" || "$CONFIRM_UPDATE" != "UPDATE" || ! "$EXPECTED_MAIN_SHA" =~ ^[0-9a-f]{40}$ || "$EXPECTED_MAIN_SHA" != "$HEAD_SHA" ]]; then
-              echo 'DENY: candidate requires human operator, UPDATE and exact main SHA' >&2
-              exit 1
-            fi
-            echo 'mode=candidate' >> "$GITHUB_OUTPUT"
-            echo 'CANDIDATE_REQUEST: no Release or publication permission' >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo 'DENY: unrecognized dry_run value' >&2
-            exit 1
-          fi
-
-  watch_readonly:
-    name: Read-only upstream check (no candidate artifact)
-    needs: authorize
-    if: ${{ needs.authorize.outputs.mode == 'read-only' }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout extension configuration without persisted credentials
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Checkout immutable central detector (not the mutating reusable workflow)
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: pgextwin/build
-          ref: 16b886b9d06d6f389b369b87ce0c155767697ca0
-          path: .pgextwin-build
-          persist-credentials: false
-      - name: Set up Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
-        with:
-          python-version: "3.13"
-      - name: Check live central fleet watch authorization (read only)
-        id: fleet
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: >-
-          python .pgextwin-build/scripts/fleet-control.py
-          --extension config/extension.json
-          --watch config/update-watch.json
-          --repository "$GITHUB_REPOSITORY"
-          --action watch
-      - name: Install schema validator
-        if: steps.fleet.outputs.allowed == 'true'
-        run: python -m pip install --disable-pip-version-check "jsonschema>=4,<5"
-      - name: Validate update watch metadata
-        if: steps.fleet.outputs.allowed == 'true'
-        run: >-
-          python .pgextwin-build/scripts/validate-update-watch.py
-          --extension-config config/extension.json
-          --watch-config config/update-watch.json
-          --schema .pgextwin-build/schema/update-watch.schema.json
-      - name: Detect stable upstream only (never reconcile Issues)
-        if: steps.fleet.outputs.allowed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: >-
-          python .pgextwin-build/scripts/check-upstream-update.py
-          --extension-config config/extension.json
-          --watch-config config/update-watch.json
-          --output "$RUNNER_TEMP/update-result.json"
-          --watcher-repository pgextwin/build
-          --watcher-sha 16b886b9d06d6f389b369b87ce0c155767697ca0
-      - name: Publish read-only summary (no Artifact)
-        if: steps.fleet.outputs.allowed == 'true'
-        run: >-
-          python .pgextwin-build/scripts/write-update-watch-summary.py
-          --result "$RUNNER_TEMP/update-result.json"
-          --summary "$GITHUB_STEP_SUMMARY"
-      - name: Report centrally suppressed read-only check
-        if: steps.fleet.outputs.allowed != 'true'
-        run: echo 'Central fleet watch is disabled; no upstream detection or mutation.' >> "$GITHUB_STEP_SUMMARY"
+    uses: pgextwin/build/.github/workflows/operator-update-readonly.yml@33853f3a4381bfc2d984fad371e5ba5c768595a5
+    with:
+      dry_run: ${{ inputs.dry_run }}
+      confirm_update: ${{ inputs.confirm_update }}
+      expected_main_sha: ${{ inputs.expected_main_sha }}
+      detector_sha: 16b886b9d06d6f389b369b87ce0c155767697ca0
 
   watch_candidate:
     name: Explicit upstream check and Issue reconciliation
