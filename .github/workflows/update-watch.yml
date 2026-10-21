@@ -1,42 +1,25 @@
-name: Upstream update watch (operator-requested)
+name: Upstream candidate after verified central daily fleet scan
 
-# B2: only an explicit human request may create candidates.
+# 03:30 UTC = 12:30 JST, after existing central 00:00 UTC read-only inventory.
+# Candidate only; human UPDATE form and duplicate fleet scans removed.
 on:
-  workflow_dispatch:
-    inputs:
-      dry_run:
-        description: Read-only check (uncheck only for explicit candidate request)
-        required: true
-        type: boolean
-        default: true
-      confirm_update:
-        description: Type UPDATE for a candidate request; leave blank for dry run
-        required: false
-        type: string
-        default: ''
-      expected_main_sha:
-        description: Current protected main 40-character SHA for candidate request
-        required: false
-        type: string
-        default: ''
+  schedule:
+    - cron: "30 3 * * *"
 
 permissions:
   contents: read
 
 concurrency:
-  group: on-demand-update-${{ github.repository }}
+  group: verified-auto-candidate-${{ github.repository }}
   cancel-in-progress: false
 
 jobs:
   authorize:
-    name: Shared strict operator preflight and GET-only update watch
+    name: Read-only latest 17-fleet success and exact protected main preflight
     permissions:
       contents: read
-    uses: pgextwin/build/.github/workflows/operator-update-readonly.yml@33853f3a4381bfc2d984fad371e5ba5c768595a5
+    uses: pgextwin/build/.github/workflows/operator-update-auto.yml@39a329fb5e7c7f801eef3a23688fdd76cce8b2ac
     with:
-      dry_run: ${{ inputs.dry_run }}
-      confirm_update: ${{ inputs.confirm_update }}
-      expected_main_sha: ${{ inputs.expected_main_sha }}
       detector_sha: 16b886b9d06d6f389b369b87ce0c155767697ca0
 
   watch_candidate:
