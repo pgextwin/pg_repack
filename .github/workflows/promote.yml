@@ -19,10 +19,6 @@ on:
         description: New and NEVER-used Windows Release tag
         required: true
         type: string
-      confirm_release:
-        description: Type PUBLISH to explicitly authorize this formal Release
-        required: true
-        type: string
 
 concurrency:
   group: pg_repack-human-release-promotion
@@ -48,4 +44,6 @@ jobs:
       candidate_run_id: ${{ inputs.candidate_run_id }}
       decision_run_id: ${{ inputs.decision_run_id }}
       release_tag: ${{ inputs.release_tag }}
-      confirm_release: ${{ inputs.confirm_release }}
+      # Human main-branch dispatch is the Release confirmation.
+      # Keep the existing immutable shared gate's required compatibility value.
+      confirm_release: PUBLISH
