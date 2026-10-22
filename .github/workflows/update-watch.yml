@@ -5,6 +5,9 @@ name: Upstream candidate after verified central daily fleet scan
 on:
   schedule:
     - cron: "30 3 * * *"
+  workflow_run:
+    workflows: ["Windows CI/CD"]
+    types: [completed]
 
 permissions:
   contents: read
@@ -16,6 +19,7 @@ concurrency:
 jobs:
   authorize:
     name: Read-only latest 17-fleet success and exact protected main preflight
+    if: github.event_name == 'schedule'
     permissions:
       contents: read
     uses: pgextwin/build/.github/workflows/operator-update-auto.yml@eaac18cb195f21294964b4a132c5cfc754a90b62
@@ -49,3 +53,21 @@ jobs:
       update_watch_path: config/update-watch.json
       candidate_policy_path: config/candidate-build.json
       dry_run: false
+
+  candidate_native_pr_audit:
+    name: Verify completed native candidate CI without rerunning Windows builds
+    if: >-
+      ${{ github.event_name == 'workflow_run' &&
+          github.event.action == 'completed' &&
+          github.event.workflow_run.event == 'pull_request' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.name == 'Windows CI/CD' &&
+          startsWith(github.event.workflow_run.head_branch, 'auto-candidate/') &&
+          github.ref == 'refs/heads/main' }}
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    uses: pgextwin/build/.github/workflows/verify-native-pr-candidate.yml@cb06156e897a0b8f0609d4320ab619ac6c5c29a8
+    with:
+      ci_run_id: ${{ github.event.workflow_run.id }}
