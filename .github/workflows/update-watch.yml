@@ -87,4 +87,22 @@ jobs:
       contents: read
       actions: read
       pull-requests: read
-    uses: pgextwin/build/.github/workflows/automatic-postmerge-audit-readonly.yml@8a41cedf34108bbb9b07a24ff4ddde42d9621b97
+    uses: pgextwin/build/.github/workflows/automatic-postmerge-audit-readonly.yml@e81d9f7b38a949d5b220ab16228ff206a8020992
+
+  candidate_attested_build:
+    name: Attest original candidate after verified protected main merge (NO PUBLISH)
+    needs: candidate_main_merge_observation
+    if: >-
+      ${{ github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          needs.candidate_main_merge_observation.result == 'success' &&
+          needs.candidate_main_merge_observation.outputs.verified_signed_build_intent == 'true' }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    uses: pgextwin/build/.github/workflows/build-extension-attested.yml@5756b3c5136a8bf4db710016cfe97555f0a71c6d
+    with:
+      extension_config_path: config/extension.json
+      test_contract_path: config/test-contract.json
