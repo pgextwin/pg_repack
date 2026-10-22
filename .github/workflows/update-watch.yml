@@ -5,6 +5,10 @@ name: Upstream candidate after verified central daily fleet scan
 on:
   schedule:
     - cron: "30 3 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "config/extension.json"
   workflow_run:
     workflows: ["Windows CI/CD"]
     types: [completed]
@@ -71,3 +75,16 @@ jobs:
     uses: pgextwin/build/.github/workflows/verify-native-pr-candidate.yml@cb06156e897a0b8f0609d4320ab619ac6c5c29a8
     with:
       ci_run_id: ${{ github.event.workflow_run.id }}
+
+  candidate_main_merge_observation:
+    name: Authenticate main merge and scheduled decision (NONPUBLISHING)
+    if: >-
+      ${{ github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          github.event.created == false &&
+          github.event.deleted == false }}
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    uses: pgextwin/build/.github/workflows/automatic-postmerge-audit-readonly.yml@8a41cedf34108bbb9b07a24ff4ddde42d9621b97
