@@ -106,3 +106,17 @@ jobs:
     with:
       extension_config_path: config/extension.json
       test_contract_path: config/test-contract.json
+
+  candidate_signed_audit:
+    name: Independently verify signed candidate bytes and identity (NO PUBLISH)
+    needs: [candidate_main_merge_observation, candidate_attested_build]
+    if: >-
+      ${{ github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          needs.candidate_main_merge_observation.outputs.verified_signed_build_intent == 'true' &&
+          needs.candidate_attested_build.result == 'success' }}
+    permissions:
+      contents: read
+      actions: read
+      attestations: read
+    uses: pgextwin/build/.github/workflows/verify-signed-candidate-readonly.yml@8c68c9f962f1d7082d5bf852de928d37c63718c1
