@@ -119,4 +119,4 @@ jobs:
       contents: read
       actions: read
       attestations: read
-    uses: pgextwin/build/.github/workflows/verify-signed-candidate-readonly.yml@069eca1a2ac09f01cab86452cf1eb24feda4dfc4
+    uses: pgextwin/build/.github/workflows/verify-signed-candidate-readonly.yml@b820cc1df9fcfc1ff07def0af40a985ce1454e46
