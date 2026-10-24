@@ -26,7 +26,7 @@ jobs:
     if: github.event_name == 'schedule'
     permissions:
       contents: read
-    uses: pgextwin/build/.github/workflows/operator-update-auto.yml@0f8aa92b898d0f9cca2dbf45660293445d96ec4c
+    uses: pgextwin/build/.github/workflows/operator-update-auto.yml@df9847fa265c06c8f8602a72cfb0fcde52ee46df
     with:
       detector_sha: 16b886b9d06d6f389b369b87ce0c155767697ca0
 
@@ -37,7 +37,7 @@ jobs:
     permissions:
       contents: read
       issues: write
-    uses: pgextwin/build/.github/workflows/check-extension-updates.yml@0f8aa92b898d0f9cca2dbf45660293445d96ec4c
+    uses: pgextwin/build/.github/workflows/check-extension-updates.yml@df9847fa265c06c8f8602a72cfb0fcde52ee46df
     with:
       extension_config_path: config/extension.json
       update_watch_path: config/update-watch.json
@@ -51,7 +51,7 @@ jobs:
       contents: write
       pull-requests: write
       actions: write
-    uses: pgextwin/build/.github/workflows/candidate-update.yml@0f8aa92b898d0f9cca2dbf45660293445d96ec4c
+    uses: pgextwin/build/.github/workflows/candidate-update.yml@df9847fa265c06c8f8602a72cfb0fcde52ee46df
     with:
       extension_config_path: config/extension.json
       update_watch_path: config/update-watch.json
@@ -119,4 +119,4 @@ jobs:
       contents: read
       actions: read
       attestations: read
-    uses: pgextwin/build/.github/workflows/verify-signed-candidate-readonly.yml@0f8aa92b898d0f9cca2dbf45660293445d96ec4c
+    uses: pgextwin/build/.github/workflows/verify-signed-candidate-readonly.yml@df9847fa265c06c8f8602a72cfb0fcde52ee46df
