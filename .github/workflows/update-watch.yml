@@ -72,7 +72,8 @@ jobs:
       contents: read
       actions: read
       pull-requests: read
-    uses: pgextwin/build/.github/workflows/verify-native-pr-candidate.yml@cb06156e897a0b8f0609d4320ab619ac6c5c29a8
+      checks: read
+    uses: pgextwin/build/.github/workflows/verify-native-pr-candidate.yml@2b2903e463d28891b5688bf4546da99a299c3684
     with:
       ci_run_id: ${{ github.event.workflow_run.id }}
 
@@ -87,7 +88,8 @@ jobs:
       contents: read
       actions: read
       pull-requests: read
-    uses: pgextwin/build/.github/workflows/automatic-postmerge-audit-readonly.yml@e81d9f7b38a949d5b220ab16228ff206a8020992
+      checks: read
+    uses: pgextwin/build/.github/workflows/automatic-postmerge-audit-readonly.yml@2b2903e463d28891b5688bf4546da99a299c3684
 
   candidate_attested_build:
     name: Attest original candidate after verified protected main merge (NO PUBLISH)
