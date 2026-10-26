@@ -26,7 +26,7 @@ jobs:
     if: github.event_name == 'schedule'
     permissions:
       contents: read
-    uses: pgextwin/build/.github/workflows/operator-update-auto.yml@bf5ce09746f4ff6cf439ac1571a9c2646983fdcc
+    uses: pgextwin/build/.github/workflows/operator-update-auto.yml@9ec4dde0b6defabc10cf3527c06cb69c13e5a7ff
     with:
       detector_sha: 16b886b9d06d6f389b369b87ce0c155767697ca0
 
@@ -37,7 +37,7 @@ jobs:
     permissions:
       contents: read
       issues: write
-    uses: pgextwin/build/.github/workflows/check-extension-updates.yml@bf5ce09746f4ff6cf439ac1571a9c2646983fdcc
+    uses: pgextwin/build/.github/workflows/check-extension-updates.yml@9ec4dde0b6defabc10cf3527c06cb69c13e5a7ff
     with:
       extension_config_path: config/extension.json
       update_watch_path: config/update-watch.json
@@ -51,7 +51,7 @@ jobs:
       contents: write
       pull-requests: write
       actions: write
-    uses: pgextwin/build/.github/workflows/candidate-update.yml@bf5ce09746f4ff6cf439ac1571a9c2646983fdcc
+    uses: pgextwin/build/.github/workflows/candidate-update.yml@9ec4dde0b6defabc10cf3527c06cb69c13e5a7ff
     with:
       extension_config_path: config/extension.json
       update_watch_path: config/update-watch.json
@@ -73,7 +73,7 @@ jobs:
       actions: read
       pull-requests: read
       checks: read
-    uses: pgextwin/build/.github/workflows/verify-native-pr-candidate.yml@bf5ce09746f4ff6cf439ac1571a9c2646983fdcc
+    uses: pgextwin/build/.github/workflows/verify-native-pr-candidate.yml@9ec4dde0b6defabc10cf3527c06cb69c13e5a7ff
     with:
       ci_run_id: ${{ github.event.workflow_run.id }}
 
@@ -89,7 +89,7 @@ jobs:
       actions: read
       pull-requests: read
       checks: read
-    uses: pgextwin/build/.github/workflows/automatic-postmerge-audit-readonly.yml@bf5ce09746f4ff6cf439ac1571a9c2646983fdcc
+    uses: pgextwin/build/.github/workflows/automatic-postmerge-audit-readonly.yml@9ec4dde0b6defabc10cf3527c06cb69c13e5a7ff
 
   candidate_attested_build:
     name: Attest original candidate after verified protected main merge (NO PUBLISH)
@@ -121,4 +121,4 @@ jobs:
       contents: read
       actions: read
       attestations: read
-    uses: pgextwin/build/.github/workflows/verify-signed-candidate-readonly.yml@bf5ce09746f4ff6cf439ac1571a9c2646983fdcc
+    uses: pgextwin/build/.github/workflows/verify-signed-candidate-readonly.yml@9ec4dde0b6defabc10cf3527c06cb69c13e5a7ff
