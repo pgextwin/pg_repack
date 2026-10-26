@@ -26,7 +26,7 @@ jobs:
     if: github.event_name == 'schedule'
     permissions:
       contents: read
-    uses: pgextwin/build/.github/workflows/operator-update-auto.yml@9ec4dde0b6defabc10cf3527c06cb69c13e5a7ff
+    uses: pgextwin/build/.github/workflows/operator-update-auto.yml@dbf7365ae702ddc19e094205f8343ec555125d9c
     with:
       detector_sha: 16b886b9d06d6f389b369b87ce0c155767697ca0
 
@@ -37,7 +37,7 @@ jobs:
     permissions:
       contents: read
       issues: write
-    uses: pgextwin/build/.github/workflows/check-extension-updates.yml@9ec4dde0b6defabc10cf3527c06cb69c13e5a7ff
+    uses: pgextwin/build/.github/workflows/check-extension-updates.yml@dbf7365ae702ddc19e094205f8343ec555125d9c
     with:
       extension_config_path: config/extension.json
       update_watch_path: config/update-watch.json
@@ -51,7 +51,7 @@ jobs:
       contents: write
       pull-requests: write
       actions: write
-    uses: pgextwin/build/.github/workflows/candidate-update.yml@9ec4dde0b6defabc10cf3527c06cb69c13e5a7ff
+    uses: pgextwin/build/.github/workflows/candidate-update.yml@dbf7365ae702ddc19e094205f8343ec555125d9c
     with:
       extension_config_path: config/extension.json
       update_watch_path: config/update-watch.json
