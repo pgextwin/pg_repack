@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "kind": "pgextwin-local-prepare",
+  "requestId": "r-20261029-r06localpgrepack03",
+  "mode": "PREPARE",
+  "sourceRunId": 40852118886,
+  "sourceHeadSha": "49575a2d11a591fbf456c0c4d790cd0346ef2fe7",
+  "sourceArtifactId": 12886559374,
+  "sourceZipSha256": "b81a14c98b7fcc403970b7bde40028799a99938bef595a8ea1400154b35e5262",
+  "centralRequestId": "r-20261029-r06prepare17pin03",
+  "targetMainSha": "6f61cfa5efe14a7626cfcb9fe1707d9097f98d68",
+  "expiresAt": "2026-10-29T15:00:00Z",
+  "publicReleaseAuthorized": false
+}
