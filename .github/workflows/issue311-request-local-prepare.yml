@@ -1,0 +1,82 @@
+name: Issue 311 App-bot original local PREPARE (NO RELEASE)
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/issue311-request-local-prepare.yml'
+      - 'scripts/issue311-app-local-prepare.py'
+      - 'tests/test-issue311-app-local-prepare.py'
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: Exact one-shot request ID
+        required: true
+        type: string
+      source_run_id:
+        required: true
+        type: string
+      source_head_sha:
+        required: true
+        type: string
+      source_artifact_id:
+        required: true
+        type: string
+      source_zip_sha256:
+        required: true
+        type: string
+      central_request_id:
+        required: true
+        type: string
+      local_main_sha:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: issue311-app-local-prepare-${{ github.repository }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  offline_policy:
+    if: github.event_name == 'pull_request'
+    name: Strict App identity and PREPARE source-kind denial tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python tests/test-issue311-app-local-prepare.py
+
+  app_local_prepare:
+    if: github.repository == 'pgextwin/pg_repack' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.actor == 'pgextwin-issue311-prepare-coord[bot]' && github.run_attempt == 1
+    name: Original protected PREPARE ZIP verification (NO RELEASE)
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: pgextwin/build
+          ref: 51ab1666a5464e36ffa0efef7157ad0e033d59be
+          path: .pgextwin-build
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: '3.13'
+      - run: python -m pip install --disable-pip-version-check 'jsonschema>=4,<5'
+      - name: Strict actual App event, original 17 protected central Run/ZIP and new local source-kind
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/issue311-app-local-prepare.py
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: issue311-app-local-prepare-original-receipt
+          path: issue311-app-local-prepare-receipt.json
+          if-no-files-found: error
+          retention-days: 30
