@@ -67,4 +67,18 @@ for required in ("authenticate_original(", "remote_branch(", "centralOriginalOut
                  "publisherSourceKindAuthorized", "candidateAdmissionAuthorized"):
     assert required in body
 assert "release create" not in body and "git push" not in body
+
+fresh=copy.deepcopy(ev)
+fresh["inputs"]["central_request_id"]="r-20261101-r06prepareoriginal01"
+fresh["inputs"]["source_run_id"]="41077777777"
+fresh["inputs"]["request_id"]=m.derive_local_id(fresh["inputs"])
+assert m.authenticate_event(fresh,env)["request_id"]==fresh["inputs"]["request_id"]
+for key,value in (("source_run_id","41077777778"),("source_head_sha","d"*40),("source_zip_sha256","e"*64),("local_main_sha","f"*40),("central_request_id","r-20261101-r06prepareoriginal02"),("request_id",m.REQUEST_ID)):
+    bad=copy.deepcopy(fresh)
+    bad["inputs"][key]=value
+    reject(bad,env)
+bad=copy.deepcopy(ev)
+bad["inputs"]["central_request_id"]=fresh["inputs"]["central_request_id"]
+reject(bad,env)
+
 print("ISSUE311_APP_BOT_LOCAL_PREPARE_NEGATIVE_TESTS_PASS")
