@@ -2,6 +2,7 @@
 """R06-06 independent App-bot PREPARE-only original ZIP admission (no publisher)."""
 from __future__ import annotations
 import importlib.util
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -12,6 +13,7 @@ REPO = "pgextwin/pg_repack"
 BOT = "pgextwin-issue311-prepare-coord[bot]"
 BOT_ID = 350058024
 REQUEST_ID = "r-20261030-r06coordlocalpgrepack01"
+LEGACY_CENTRAL_REQUEST_ID = "r-20261030-r06preparecoord001"
 WORKFLOW = "Issue 311 App-bot original local PREPARE (NO RELEASE)"
 OUTPUT = "issue311-app-local-prepare-receipt.json"
 SOURCE = Path(".pgextwin-build/scripts/issue311-r06-fleet-local-prepare.py")
@@ -21,6 +23,27 @@ CENTRAL_ID = re.compile(r"^r-20[0-9]{6}-r06prepare[a-z0-9-]{4,40}$")
 FIELDS = {"request_id", "source_run_id", "source_head_sha",
           "source_artifact_id", "source_zip_sha256", "central_request_id",
           "local_main_sha"}
+DERIVED = re.compile(r"r-20[0-9]{6}-r06coordlocal[a-f0-9]{24}\Z")
+SOURCE_DATE = re.compile(r"r-(20[0-9]{6})-r06prepare[a-z0-9-]{4,40}\Z")
+
+def derive_local_id(inputs):
+    """R10 v1 immutable six-field local ID. Never itself grants App source trust."""
+    need(type(inputs) is dict and set(inputs) == FIELDS
+         and all(type(v) is str for v in inputs.values()), "noncanonical App inputs")
+    central, run = inputs["central_request_id"], inputs["source_run_id"]
+    match = SOURCE_DATE.fullmatch(central)
+    need(match is not None and run.isdecimal() and run == str(int(run))
+         and int(run) > 0 and SHA40.fullmatch(inputs["source_head_sha"])
+         and SHA64.fullmatch(inputs["source_zip_sha256"])
+         and SHA40.fullmatch(inputs["local_main_sha"]), "invalid original source for ID")
+    # Identical to protected build/scripts/issue311-r10-replay-safe-id.py:
+    fields = (central, run, inputs["source_head_sha"], inputs["source_zip_sha256"],
+              REPO, inputs["local_main_sha"])
+    raw = b"pgextwin-r10-local-request-v1\0" + b"\0".join(
+        field.encode("ascii") for field in fields)
+    result = "r-" + match.group(1) + "-r06coordlocal" + hashlib.sha256(raw).hexdigest()[:24]
+    need(DERIVED.fullmatch(result) is not None, "invalid derived request ID")
+    return result
 
 class Denied(ValueError):
     pass
@@ -51,9 +74,16 @@ def authenticate_event(event, env):
     need(sender.get("id") == BOT_ID and sender.get("login") == BOT
          and sender.get("type") == "Bot", "actual sender App identity changed")
     inputs = event.get("inputs", {})
-    need(type(inputs) is dict and set(inputs) == FIELDS
-         and inputs.get("request_id") == REQUEST_ID,
+    need(type(inputs) is dict and set(inputs) == FIELDS,
          "unapproved one-shot source-kind or inputs")
+    if inputs.get("request_id") == REQUEST_ID:
+        # Historical pilot only; never reinterpret the fixed ID as a fresh source.
+        need(inputs.get("central_request_id") == LEGACY_CENTRAL_REQUEST_ID,
+             "fixed legacy request may not target a new central source")
+    else:
+        need(inputs.get("central_request_id") != LEGACY_CENTRAL_REQUEST_ID
+             and inputs.get("request_id") == derive_local_id(inputs),
+             "new original requires exact replay-safe source-bound local ID")
     need(SHA40.fullmatch(env.get("GITHUB_SHA", "")) is not None
          and inputs.get("local_main_sha") == env["GITHUB_SHA"],
          "local source ref is not pinned to original App event HEAD")
@@ -71,7 +101,7 @@ def authenticate_event(event, env):
 
 def run():
     receipt = {
-        "schemaVersion": 1, "requestId": REQUEST_ID, "result": "FAILED",
+        "schemaVersion": 1, "requestId": None, "result": "FAILED",
         "sourceKind": "APP_BOT_AUTHENTICATED_ORIGINAL_PREPARE_LOCAL_READONLY_V1",
         "candidateAdmissionAuthorized": False,
         "publisherSourceKindAuthorized": False,
@@ -83,6 +113,9 @@ def run():
         event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_bytes(),
                            object_pairs_hook=unique)
         inputs = authenticate_event(event, os.environ)
+        receipt["requestId"] = inputs["request_id"]
+        receipt["requestIdBinding"] = ("LEGACY_EXACT_SOURCE" if
+            inputs["request_id"] == REQUEST_ID else "R10_SOURCE_BOUND_SHA256_V1")
         head = subprocess.check_output(["git", "rev-parse", "HEAD"],
                                        text=True).strip()
         need(head == os.environ["GITHUB_SHA"], "local checkout/event SHA mismatch")
