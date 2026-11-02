@@ -1,0 +1,38 @@
+name: Genuine owner on-demand protected-main signed Windows source (NO RELEASE)
+run-name: Chat-main-sign-comment-${{ github.event.comment.id || 0 }}
+on:
+  issue_comment:
+    types: [created]
+  pull_request:
+    paths:
+      - .github/workflows/chat-signed-main.yml
+permissions:
+  contents: read
+concurrency:
+  group: owner-main-signed-${{ github.repository }}
+  cancel-in-progress: false
+jobs:
+  signed_main_source:
+    name: Authenticate owner Issue 60 and attest true protected main (NONPUBLISHING)
+    if: >-
+      ${{ github.repository == 'pgextwin/pg_repack' &&
+          github.event_name == 'issue_comment' &&
+          github.ref == 'refs/heads/main' &&
+          github.event.issue.number == 60 &&
+          !github.event.issue.pull_request &&
+          github.event.comment.body == '/pgextwin sign-main' &&
+          github.actor == 'ShutenOishi' &&
+          github.triggering_actor == 'ShutenOishi' &&
+          github.run_attempt == 1 }}
+    permissions:
+      contents: read
+      issues: read
+      actions: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    uses: pgextwin/build/.github/workflows/chat-signed-main-source.yml@e73f96515d3d297ea51a68070d06139a15481c50
+    with:
+      request_issue: 60
+      extension_config_path: config/extension.json
+      test_contract_path: config/test-contract.json
