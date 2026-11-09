@@ -2,7 +2,7 @@
 
 ## 1. 対象
 
-pgextwinのpg_repack packageはWindows x64向けです。
+pgextwinのpg_repackパッケージはWindows x64向けです。
 
 PostgreSQL 14〜18について、それぞれ専用ZIPを作成しています。必ず実行対象PostgreSQLの**メジャーバージョンと一致するZIP**を使用してください。
 
@@ -30,7 +30,7 @@ ZIP\share\extension\pg_repack--1.5.3.sql
   -> <PostgreSQL>\share\extension\
 ~~~
 
-同梱される `COPYRIGHT` と `POSTGRESQL-COPYRIGHT` はライセンス表示です。削除せずpackageと一緒に保管してください。
+同梱される `COPYRIGHT` と `POSTGRESQL-COPYRIGHT` はライセンス表示です。削除せず、パッケージと一緒に保管してください。
 
 ## 3. Extension作成
 
@@ -62,7 +62,7 @@ PostgreSQLの `bin` から次を実行します。
 .\pg_repack.exe --version
 ~~~
 
-実際の再編成では、対象DBへの接続条件、対象table、lock timeout、並列index buildなどの指定が関係します。コマンドラインオプションはupstream pg_repackドキュメントを確認してください。
+実際の再編成では、対象DBへの接続条件、対象テーブル、ロックのタイムアウト、並列インデックス構築などの指定が関係します。コマンドラインオプションは上流pg_repackのドキュメントを確認してください。
 
 典型的な形式は次のようになります。
 
@@ -70,7 +70,7 @@ PostgreSQLの `bin` から次を実行します。
 .\pg_repack.exe -h 127.0.0.1 -p 5432 -U postgres -d mydb --table public.mytable
 ~~~
 
-本番データで実行する前に、バックアップ、空き容量、対象テーブルのprimary key/unique key条件、長時間transaction、DDL競合、接続権限を必ず確認してください。
+本番データで実行する前に、バックアップ、空き容量、対象テーブルの主キー・一意キーの条件、長時間実行されるトランザクション、DDL競合、接続権限を必ず確認してください。
 
 ## 5. PostgreSQL majorを混在させない
 
