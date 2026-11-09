@@ -12,10 +12,10 @@
 
 1. バックアップを取得し、[上流ドキュメント](https://github.com/reorg/pg_repack)で必要条件を確認します。
 2. ファイルを置き換える前にPostgreSQLを停止します。対応するZIPのlib/とshare/extension/以下のファイルを、PostgreSQLの同名ディレクトリに配置します。
-3. ZIPにはbin/pg_repack.exeも含まれます。対応するPostgreSQLのbin/へコピーしてください。EXEと拡張機能のDLLは同じPostgreSQLメジャーバージョン向けのものを使用します。事前ロードは不要です。実行権限やロックの扱いは上流の説明を確認してください。
-4. 必要な設定を反映してPostgreSQLを起動し、利用するデータベースでCREATE EXTENSION pg_repack;を実行します。
+3. ZIPには`bin/pg_repack.exe`も含まれます。対応するPostgreSQLの`bin/`へコピーしてください。EXEと拡張機能のDLLは同じPostgreSQLメジャーバージョン向けのものを使用します。事前ロードは不要です。実行権限やロックの扱いは上流の説明を確認してください。
+4. 必要な設定を反映してPostgreSQLを起動し、利用するデータベースで`CREATE EXTENSION pg_repack;`を実行します。
 
-ReleaseのSHA256SUMS.txtでダウンロードしたファイルを照合してください。SPDX形式のSBOM、脆弱性レポート、署名付き証明の有無はReleaseで確認できます。本番導入前に検証環境で動作を確認してください。
+ダウンロードしたファイルを、Releaseに掲載された`SHA256SUMS.txt`と照合してください。SPDX形式のSBOM、脆弱性レポート、署名付き証明の有無はReleaseで確認できます。本番環境に導入する前に、検証環境で動作を確認してください。
 
 ## ライセンス
 
