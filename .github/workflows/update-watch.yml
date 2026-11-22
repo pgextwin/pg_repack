@@ -51,11 +51,10 @@ jobs:
       contents: write
       pull-requests: write
       actions: write
-    uses: pgextwin/build/.github/workflows/candidate-update.yml@dbf7365ae702ddc19e094205f8343ec555125d9c
+    uses: pgextwin/build/.github/workflows/candidate-update.yml@1905bb039bd80209ba219e316d6485249091c8b9
     with:
       extension_config_path: config/extension.json
       update_watch_path: config/update-watch.json
-      candidate_policy_path: config/candidate-build.json
       dry_run: false
 
   candidate_native_pr_audit:
