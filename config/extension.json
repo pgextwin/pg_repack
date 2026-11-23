@@ -27,5 +27,11 @@
         "upstreamPath": "COPYRIGHT"
       }
     ]
+  },
+  "watch": {
+    "source": "github",
+    "strategy": "github-tags",
+    "prereleases": false,
+    "stableTagPattern": "^ver_(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)$"
   }
 }
