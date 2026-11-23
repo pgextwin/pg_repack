@@ -170,6 +170,8 @@ if ($LASTEXITCODE -ne 0 -or $pgVersionText -notmatch '^PostgreSQL\s+(\d+)\.(\d+)
 
 $pgMajor = [int]$Matches[1]
 $pgMinor = [int]$Matches[2]
+# PostgreSQL 19 headers require C11.
+$cStandard = if ($pgMajor -ge 19) { "/std:c11" } else { "" }
 $pgSourceTag = "REL_{0}_{1}" -f $pgMajor, $pgMinor
 $pgSourceDir = Join-Path $tempRoot ("postgresql-{0}.{1}-source" -f $pgMajor, $pgMinor)
 $pgSupportBuildDir = Join-Path $tempRoot ("postgresql-{0}.{1}-frontend-support" -f $pgMajor, $pgMinor)
@@ -294,12 +296,12 @@ call "$vsDevCmd" -arch=x64 -host_arch=x64
 if errorlevel 1 exit /b %errorlevel%
 cd /d "$UpstreamDir"
 
-cl /nologo /O2 /MD /DWIN32 /DWIN32_NO_STATUS /D_CRT_SECURE_NO_WARNINGS /DREPACK_VERSION=$version ^
+cl /nologo /O2 /MD $cStandard /DWIN32 /DWIN32_NO_STATUS /D_CRT_SECURE_NO_WARNINGS /DREPACK_VERSION=$version ^
   $includeArgs /I"$libDir" /I"$libDir\pgut" ^
   /c "$libDir\repack.c" /Fo"$libDir\repack.obj"
 if errorlevel 1 exit /b %errorlevel%
 
-cl /nologo /O2 /MD /DWIN32 /DWIN32_NO_STATUS /D_CRT_SECURE_NO_WARNINGS ^
+cl /nologo /O2 /MD $cStandard /DWIN32 /DWIN32_NO_STATUS /D_CRT_SECURE_NO_WARNINGS ^
   $includeArgs /I"$libDir" /I"$libDir\pgut" ^
   /c "$libDir\pgut\pgut-spi.c" /Fo"$libDir\pgut-spi.obj"
 if errorlevel 1 exit /b %errorlevel%
@@ -309,17 +311,17 @@ link /nologo /DLL /OUT:"$libDir\pg_repack.dll" /DEF:"$defPath" ^
   "$PgRoot\lib\postgres.lib"
 if errorlevel 1 exit /b %errorlevel%
 
-cl /nologo /O2 /MD /DWIN32 /DWIN32_NO_STATUS /D_CRT_SECURE_NO_WARNINGS /DFRONTEND /DREPACK_VERSION=$version ^
+cl /nologo /O2 /MD $cStandard /DWIN32 /DWIN32_NO_STATUS /D_CRT_SECURE_NO_WARNINGS /DFRONTEND /DREPACK_VERSION=$version ^
   $includeArgs /I"$binDir" /I"$binDir\pgut" ^
   /c "$binDir\pg_repack.c" /Fo"$binDir\pg_repack.obj"
 if errorlevel 1 exit /b %errorlevel%
 
-cl /nologo /O2 /MD /DWIN32 /DWIN32_NO_STATUS /D_CRT_SECURE_NO_WARNINGS ^
+cl /nologo /O2 /MD $cStandard /DWIN32 /DWIN32_NO_STATUS /D_CRT_SECURE_NO_WARNINGS ^
   $includeArgs /I"$binDir" /I"$binDir\pgut" ^
   /c "$binDir\pgut\pgut.c" /Fo"$binDir\pgut.obj"
 if errorlevel 1 exit /b %errorlevel%
 
-cl /nologo /O2 /MD /DWIN32 /DWIN32_NO_STATUS /D_CRT_SECURE_NO_WARNINGS ^
+cl /nologo /O2 /MD $cStandard /DWIN32 /DWIN32_NO_STATUS /D_CRT_SECURE_NO_WARNINGS ^
   $includeArgs /I"$binDir" /I"$binDir\pgut" ^
   /c "$binDir\pgut\pgut-fe.c" /Fo"$binDir\pgut-fe.obj"
 if errorlevel 1 exit /b %errorlevel%
