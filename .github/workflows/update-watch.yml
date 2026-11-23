@@ -26,9 +26,9 @@ jobs:
     if: github.event_name == 'schedule'
     permissions:
       contents: read
-    uses: pgextwin/build/.github/workflows/operator-update-auto.yml@7788623fa49e56b1301090bea4f023ea86405657
+    uses: pgextwin/build/.github/workflows/operator-update-auto.yml@3e5300afa99b99ea8c11be2a6ef75c994d708c28
     with:
-      detector_sha: 7788623fa49e56b1301090bea4f023ea86405657
+      detector_sha: 3e5300afa99b99ea8c11be2a6ef75c994d708c28
 
   watch_candidate:
     name: Explicit upstream check and Issue reconciliation
@@ -37,7 +37,7 @@ jobs:
     permissions:
       contents: read
       issues: write
-    uses: pgextwin/build/.github/workflows/check-extension-updates.yml@dbf7365ae702ddc19e094205f8343ec555125d9c
+    uses: pgextwin/build/.github/workflows/check-extension-updates.yml@3e5300afa99b99ea8c11be2a6ef75c994d708c28
     with:
       extension_config_path: config/extension.json
       update_watch_path: config/update-watch.json
@@ -51,7 +51,7 @@ jobs:
       contents: write
       pull-requests: write
       actions: write
-    uses: pgextwin/build/.github/workflows/candidate-update.yml@1905bb039bd80209ba219e316d6485249091c8b9
+    uses: pgextwin/build/.github/workflows/candidate-update.yml@3e5300afa99b99ea8c11be2a6ef75c994d708c28
     with:
       extension_config_path: config/extension.json
       update_watch_path: config/update-watch.json
