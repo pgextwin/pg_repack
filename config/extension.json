@@ -5,15 +5,15 @@
     "repository": "reorg/pg_repack",
     "ref": "ver_1.5.3",
     "version": "1.5.3",
-    "commit": "6902ab313aeb49227867087dca99cf107f7be23b"
+    "commit": "ceda969343edc6884cb7e12af157b1e72eace3d5"
   },
   "postgresql": {
     "majors": [
-      14,
       15,
       16,
       17,
-      18
+      18,
+      19
     ]
   },
   "windows": {
