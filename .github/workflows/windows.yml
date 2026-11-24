@@ -50,6 +50,10 @@ jobs:
         env:
           WINDOWS_MATRIX_RESULT: ${{ needs.windows.result }}
           BUILD_SHA: ${{ needs.windows.outputs.build_sha }}
+          REUSE_APPLIED: ${{ needs.windows.outputs.reuse_applied }}
+          REUSE_SOURCE_PR: ${{ needs.windows.outputs.reuse_source_pr }}
+          REUSE_SOURCE_RUN_ID: ${{ needs.windows.outputs.reuse_source_run_id }}
+          REUSE_SOURCE_ATTEMPT: ${{ needs.windows.outputs.reuse_source_attempt }}
         run: |
           if [ -z "$BUILD_SHA" ]; then
             echo "WINDOWS REQUIRED SUMMARY DENIED: resolved build SHA unavailable" >&2
