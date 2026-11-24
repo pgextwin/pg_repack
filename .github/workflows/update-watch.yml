@@ -88,7 +88,7 @@ jobs:
       actions: read
       pull-requests: read
       checks: read
-    uses: pgextwin/build/.github/workflows/automatic-postmerge-audit-readonly.yml@7788623fa49e56b1301090bea4f023ea86405657
+    uses: pgextwin/build/.github/workflows/automatic-postmerge-audit-readonly.yml@6b6dbab7128394a666fdb97e3bcccb29cf67c090
 
   candidate_attested_build:
     name: Attest original candidate after verified protected main merge (NO PUBLISH)
@@ -100,10 +100,12 @@ jobs:
           needs.candidate_main_merge_observation.outputs.verified_signed_build_intent == 'true' }}
     permissions:
       contents: read
+      actions: read
+      issues: read
       id-token: write
       attestations: write
       artifact-metadata: write
-    uses: pgextwin/build/.github/workflows/build-extension-attested.yml@5756b3c5136a8bf4db710016cfe97555f0a71c6d
+    uses: pgextwin/build/.github/workflows/build-extension-attested.yml@f33f254a36ac19245fd898a6ee35c2e44d5770c0
     with:
       extension_config_path: config/extension.json
       test_contract_path: config/test-contract.json
@@ -120,4 +122,4 @@ jobs:
       contents: read
       actions: read
       attestations: read
-    uses: pgextwin/build/.github/workflows/verify-signed-candidate-readonly.yml@0ba07c7ad9fdbf20afba0a10264ecadb01ecc3df
+    uses: pgextwin/build/.github/workflows/verify-signed-candidate-readonly.yml@fcb9b197ed63e071b59f63df03e3cf0a38997cbc
