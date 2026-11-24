@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "distribution": "dll-sql",
+  "files": [
+    {
+      "source": "upstream",
+      "path": "bin/pg_repack.exe",
+      "destination": "bin/pg_repack.exe",
+      "targets": [
+        "install",
+        "zip"
+      ]
+    },
+    {
+      "source": "upstream",
+      "path": "lib/pg_repack.dll",
+      "destination": "lib/pg_repack.dll",
+      "targets": [
+        "install",
+        "zip"
+      ]
+    },
+    {
+      "source": "upstream",
+      "path": "lib/pg_repack.control",
+      "destination": "share/extension/pg_repack.control",
+      "targets": [
+        "install",
+        "zip"
+      ]
+    },
+    {
+      "source": "upstream",
+      "path": "lib/pg_repack--{version}.sql",
+      "destination": "share/extension/pg_repack--{version}.sql",
+      "targets": [
+        "install"
+      ]
+    },
+    {
+      "source": "upstream",
+      "path": "lib/pg_repack--*.sql",
+      "destination": "share/extension/{fileName}",
+      "targets": [
+        "zip"
+      ],
+      "expectedCount": 1,
+      "requiredMatches": [
+        "pg_repack--{version}.sql"
+      ]
+    },
+    {
+      "source": "license",
+      "path": "COPYRIGHT",
+      "destination": "COPYRIGHT",
+      "targets": [
+        "zip"
+      ]
+    },
+    {
+      "source": "upstream",
+      "path": "README.rst",
+      "destination": "UPSTREAM-README.rst",
+      "targets": [
+        "zip"
+      ]
+    },
+    {
+      "source": "upstream",
+      "path": "POSTGRESQL-COPYRIGHT",
+      "destination": "POSTGRESQL-COPYRIGHT",
+      "targets": [
+        "zip"
+      ]
+    }
+  ],
+  "packageInfo": [
+    "pg_repack Windows binary package",
+    "================================",
+    "",
+    "Upstream repository: {upstreamRepository}",
+    "Upstream ref:        {upstreamRef}",
+    "Upstream commit:     {upstreamCommit}",
+    "pg_repack version:   {version}",
+    "PostgreSQL major:    {pgMajor}",
+    "PostgreSQL tested:   {pgTested}",
+    "Architecture:        Windows x64",
+    "Compiler:            MSVC",
+    "Licenses:",
+    "  pg_repack:         BSD-style; see COPYRIGHT",
+    "  PostgreSQL code:   PostgreSQL License; see POSTGRESQL-COPYRIGHT",
+    "",
+    "This package contains both the PostgreSQL extension DLL and pg_repack.exe.",
+    "The client executable statically includes PostgreSQL frontend support code",
+    "built from the same PostgreSQL minor version used for validation."
+  ],
+  "packageInfoFinalNewline": true
+}
